@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+* { box-sizing: border-box; }
+
+body {
+  background: #0a0c0f;
+  color: #c8cdd8;
+  font-family: 'JetBrains Mono', 'Roboto Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#root { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #111318; }
+::-webkit-scrollbar-thumb { background: #2a2f3a; border-radius: 2px; }
+
+@keyframes flash-up {
+  0%   { background-color: rgba(0,230,118,0.4); color: #00e676; }
+  100% { background-color: transparent; }
+}
+@keyframes flash-down {
+  0%   { background-color: rgba(255,61,87,0.4); color: #ff3d57; }
+  100% { background-color: transparent; }
+}
+.flash-up   { animation: flash-up   0.8s ease-out; }
+.flash-down { animation: flash-down 0.8s ease-out; }
+
+@keyframes blink { 50% { opacity: 0.3; } }
+.blink { animation: blink 1s step-start infinite; }
+
+.panel {
+  background: #111318;
+  border: 1px solid #1e2229;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.panel-header {
+  background: #0d1117;
+  border-bottom: 1px solid #1e2229;
+  padding: 4px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5a6070;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.panel-body { overflow-y: auto; flex: 1; min-height: 0; }
+
+table { width: 100%; border-collapse: collapse; }
+thead { position: sticky; top: 0; z-index: 2; }
+th {
+  background: #0a0c0f;
+  color: #3a4050;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid #1e2229;
+  white-space: nowrap;
+  font-weight: 600;
+}
+th:first-child { text-align: left; }
+td {
+  padding: 3px 8px;
+  border-bottom: 1px solid rgba(30,34,41,0.4);
+  text-align: right;
+  white-space: nowrap;
+}
+td:first-child { text-align: left; }
+tr:hover td { background: rgba(41,121,255,0.05); }
+
+/* Resize handles */
+.resize-divider:hover .resize-handle-bar,
+.resize-divider:active .resize-handle-bar {
+  background: #2979ff !important;
+}
+
+.up    { color: #00e676; }
+.down  { color: #ff3d57; }
+.dim   { color: #5a6070; }
+.warn  { color: #ffaa00; }
+.blue  { color: #2979ff; }
+.white { color: #e8ecf4; }
