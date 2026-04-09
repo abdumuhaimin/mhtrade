@@ -2,8 +2,13 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/alpaca-trade/:path*", "destination": "/api/alpaca-trade/:path*" },
-    { "source": "/alpaca-data/:path*",  "destination": "/api/alpaca-data/:path*"  },
-    { "source": "/(.*)",                "destination": "/index.html"               }
+    {
+      "source": "/alpaca-trade/:path*",
+      "destination": "https://paper-api.alpaca.markets/:path*"
+    },
+    {
+      "source": "/alpaca-data/:path*",
+      "destination": "https://data.alpaca.markets/:path*"
+    }
   ]
 }
