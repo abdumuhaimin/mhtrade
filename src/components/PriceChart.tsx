@@ -31,7 +31,7 @@ export function PriceChart({ symbol }: { symbol: string }) {
 
   const { data: barsData, error: barsError, isLoading: barsLoading } = useQuery({
     queryKey: ['bars', symbol, tf],
-    queryFn: () => api.bars(symbol, TF_MAP[tf].timeframe, TF_MAP[tf].limit),
+    queryFn: () => api.bars(symbol, TF_MAP[tf].timeframe),
     refetchInterval: tf === '1D' ? 60000 : 15000,
     enabled: !!symbol,
     retry: 1,
