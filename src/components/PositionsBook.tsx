@@ -57,7 +57,9 @@ function PositionRow({ pos, livePrice }: { pos: Position; livePrice?: number }) 
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         <span style={{ fontWeight: 700, color: '#e8ecf4' }} title={pos.symbol}>{displaySym}</span>
       </td>
-      <td className="white" style={{ padding: '3px 4px' }}>{qty > 0 ? qty : Math.abs(qty)}</td>
+      <td className="white" style={{ padding: '3px 4px' }}>{
+        (() => { const q = Math.abs(qty); return q % 1 === 0 ? q.toFixed(0) : q.toFixed(2) })()
+      }</td>
       <td className="dim" style={{ padding: '3px 4px', overflow: 'hidden', textOverflow: 'ellipsis' }}>${fmt(entry)}</td>
       <td style={{ padding: '3px 4px', overflow: 'hidden', textOverflow: 'ellipsis' }}><PriceCell price={live} symbol={pos.symbol} /></td>
       <td className="white" style={{ padding: '3px 4px', overflow: 'hidden', textOverflow: 'ellipsis' }}>${fmtK(mv)}</td>
