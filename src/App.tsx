@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from './components/Header'
 import { WatchlistTicker } from './components/WatchlistTicker'
 import { PositionsBook } from './components/PositionsBook'
@@ -37,6 +37,14 @@ function VDivider({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => void 
 export default function App() {
   const [wsConnected, setWsConnected] = useState(false)
   const [chartSymbol, setChartSymbol] = useState('SPY')
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   // Column widths (px) — initialised relative to viewport so they work at any screen size
   const [leftW,  setLeftW]  = useState(() => Math.max(260, Math.round(window.innerWidth * 0.22)))
@@ -65,6 +73,34 @@ export default function App() {
     return Math.min(0.88, Math.max(0.15, newPx / total))
   }), 'vertical', 80)
 
+  // ── Mobile layout ────────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080b10' }}>
+        <Header wsConnected={wsConnected} isMobile />
+        <WatchlistTicker onSelect={setChartSymbol} onConnected={setWsConnected} />
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, padding: 4 }}>
+          <div style={{ height: 280, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            <PriceChart symbol={chartSymbol} />
+          </div>
+          <div style={{ height: 340, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            <PositionsBook />
+          </div>
+          <div style={{ height: 300, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            <AnalyticsDashboard />
+          </div>
+          <div style={{ height: 220, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            <OrdersPanel />
+          </div>
+          <div style={{ height: 200, flexShrink: 0, display: 'flex', flexDirection: 'column', marginBottom: 4 }}>
+            <PortfolioChart />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Desktop layout ───────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <Header wsConnected={wsConnected} />

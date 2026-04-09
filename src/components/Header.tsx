@@ -41,7 +41,7 @@ function Clock({ tz, label }: { tz: string; label: string }) {
   )
 }
 
-export function Header({ wsConnected }: { wsConnected: boolean }) {
+export function Header({ wsConnected, isMobile = false }: { wsConnected: boolean; isMobile?: boolean }) {
   const { data: acct } = useQuery({ queryKey: ['account'], queryFn: api.account, refetchInterval: 5000 })
 
   const equity = parseFloat(acct?.equity ?? '0')
@@ -55,6 +55,45 @@ export function Header({ wsConnected }: { wsConnected: boolean }) {
 
   const fmt  = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const fmtK = (n: number) => n >= 1000 ? `${(n/1000).toFixed(1)}K` : fmt(n)
+
+  const pnlStr = `${dayPnl >= 0 ? '+' : ''}$${fmt(Math.abs(dayPnl))} (${dayPct >= 0 ? '+' : ''}${dayPct.toFixed(2)}%)`
+
+  if (isMobile) {
+    return (
+      <div style={{
+        background: '#0d1117',
+        borderBottom: '1px solid #1e2229',
+        padding: '8px 12px',
+        flexShrink: 0,
+      }}>
+        {/* Row 1: logo + live dot */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, background: '#2979ff', borderRadius: 1, boxShadow: '0 0 8px #2979ff80' }} />
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.2em', color: '#e8ecf4' }}>MHTERM</span>
+          </div>
+          <LiveDot connected={wsConnected} />
+        </div>
+        {/* Row 2: portfolio + P&L + cash */}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+          <div>
+            <div style={{ fontSize: 9, color: '#3a4050', letterSpacing: '0.1em' }}>PORTFOLIO</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#e8ecf4' }} className={flash ? `flash-${flash}` : ''}>
+              ${fmt(equity)}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 9, color: '#3a4050', letterSpacing: '0.1em' }}>DAY P&L</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }} className={dayPnl >= 0 ? 'up' : 'down'}>{pnlStr}</div>
+          </div>
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ fontSize: 9, color: '#3a4050', letterSpacing: '0.1em' }}>CASH</div>
+            <div style={{ fontSize: 12, color: '#c8cdd8' }}>${fmtK(cash)}</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{
@@ -87,10 +126,9 @@ export function Header({ wsConnected }: { wsConnected: boolean }) {
 
       <div style={{ width: 1, height: 28, background: '#1e2229' }} />
 
-      {/* Day P&L */}
       <Stat
         label="Day P&L"
-        value={`${dayPnl >= 0 ? '+' : ''}$${fmt(Math.abs(dayPnl))} (${dayPct >= 0 ? '+' : ''}${dayPct.toFixed(2)}%)`}
+        value={pnlStr}
         cls={dayPnl >= 0 ? 'up' : 'down'}
       />
 
