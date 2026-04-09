@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, CSSProperties } from 'react'
+import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/alpaca'
 import { useLivePrices } from '../hooks/useLivePrices'

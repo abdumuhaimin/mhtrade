@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { useFlash } from '../hooks/useFlash'

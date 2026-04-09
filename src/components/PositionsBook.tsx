@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/alpaca'
 import { useLivePrices } from '../hooks/useLivePrices'
 import { useFlash } from '../hooks/useFlash'
-import { useState } from 'react'
 
 type Position = {
   symbol: string
@@ -17,7 +16,7 @@ type Position = {
   cost_basis: string
 }
 
-function PriceCell({ price, symbol }: { price: number; symbol: string }) {
+function PriceCell({ price }: { price: number; symbol: string }) {
   const flash = useFlash(price)
   const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   return (
@@ -31,7 +30,7 @@ function PriceCell({ price, symbol }: { price: number; symbol: string }) {
 function abbreviateOption(sym: string): string {
   const m = sym.match(/^([A-Z]+)(\d{2})(\d{2})(\d{2})([CP])(\d+)$/)
   if (!m) return sym
-  const [, under, yy, mm, dd, type, strikeRaw] = m
+  const [, under, , mm, dd, type, strikeRaw] = m
   const strike = parseInt(strikeRaw) / 1000
   const strikeStr = strike % 1 === 0 ? strike.toFixed(0) : strike.toFixed(1)
   return `${under} ${strikeStr}${type} ${mm}/${dd}`
