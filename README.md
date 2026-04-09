@@ -1,6 +1,6 @@
 # MHTerm — Professional Trading Terminal
 
-A Bloomberg-style trading terminal built on React + TypeScript, connected to Alpaca Markets paper trading. Real-time WebSocket prices, candlestick charts, options Greeks, and a full analytics suite — all in the browser.
+A Bloomberg-style trading terminal built on React + TypeScript, connected to Alpaca Markets paper trading. Real-time WebSocket prices, candlestick charts, options Greeks, and a full analytics suite — all in the browser. Fully responsive on mobile.
 
 **Live:** [terminal-green-beta.vercel.app](https://terminal-green-beta.vercel.app)
 
@@ -15,6 +15,7 @@ A Bloomberg-style trading terminal built on React + TypeScript, connected to Alp
 
 ### Price Chart
 - **Candlestick chart** powered by lightweight-charts v5
+- **Historical bars** via Yahoo Finance (free, no API key required)
 - **Live candle updates** — last bar close tracks WebSocket price tick by tick
 - **Timeframes** — 1Min / 5Min / 15Min / 1H / 1D
 - **Sanity guard** — rejects bad prints (>30% deviation) to prevent chart corruption
@@ -41,8 +42,9 @@ A Bloomberg-style trading terminal built on React + TypeScript, connected to Alp
 - **Header** — live portfolio value, day P&L, cash, options buying power, Singapore + New York clocks, WebSocket status dot
 
 ### Layout
-- All panels are **drag-to-resize** — horizontal between columns, vertical within columns
+- All panels are **drag-to-resize** on desktop — horizontal between columns, vertical within columns
 - Sizes initialise relative to viewport — works at any resolution
+- **Responsive mobile layout** — single scrollable column, simplified header, touch-friendly
 
 ---
 
@@ -51,11 +53,12 @@ A Bloomberg-style trading terminal built on React + TypeScript, connected to Alp
 | Layer | Technology |
 |---|---|
 | Framework | React 19 + TypeScript |
-| Build | Vite 8 |
+| Build | Vite 6 |
 | Charts | lightweight-charts v5, Recharts |
 | Data fetching | TanStack React Query |
 | Styling | Tailwind CSS v4 + CSS-in-JS |
 | Broker API | Alpaca Markets (paper trading) |
+| Market data | Alpaca IEX (real-time quotes/trades), Yahoo Finance (historical bars) |
 | Testing | Vitest — 42 tests |
 | Deployment | Vercel |
 
@@ -96,6 +99,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+> **Note:** Alpaca's free tier allows only **1 simultaneous WebSocket connection**. If you run the local dev server and the live demo at the same time, one will show DISCONNECTED. Stop the dev server when testing production.
+
 ---
 
 ## Testing
@@ -126,11 +131,12 @@ npm test
 | `VITE_ALPACA_BASE` | `/alpaca-trade` |
 | `VITE_ALPACA_DATA` | `/alpaca-data` |
 
-Get your keys from [alpaca.markets](https://alpaca.markets) → Paper Trading → API Keys.
-
 **3. Deploy.** Vercel will build and deploy automatically. Every push to `main` redeploys.
 
-The `vercel.json` rewrites proxy `/alpaca-trade/*` and `/alpaca-data/*` to Alpaca's servers, and `/yf/*` to Yahoo Finance for historical chart data — no additional configuration needed.
+The `vercel.json` rewrites proxy:
+- `/alpaca-trade/*` → Alpaca paper trading API
+- `/alpaca-data/*` → Alpaca market data API (real-time quotes)
+- `/yf/*` → Yahoo Finance (historical OHLCV bars — no API key needed)
 
 > **Note:** `VITE_` env vars are baked into the client bundle at build time (standard for single-user personal terminals). Only use paper trading credentials, never live ones.
 
@@ -142,8 +148,7 @@ The `vercel.json` rewrites proxy `/alpaca-trade/*` and `/alpaca-data/*` to Alpac
 src/
 ├── components/
 │   ├── AnalyticsDashboard.tsx  # 5-tab analytics panel
-│   ├── Header.tsx              # Top bar with account stats + clocks
-│   ├── OptionsGreeks.tsx       # Greeks table (also used in Analytics)
+│   ├── Header.tsx              # Top bar (desktop + mobile)
 │   ├── OrdersPanel.tsx         # Open / recent orders
 │   ├── PortfolioChart.tsx      # Equity curve
 │   ├── PositionsBook.tsx       # Live positions table
@@ -154,7 +159,7 @@ src/
 │   ├── useLivePrices.ts        # WebSocket price hook
 │   └── useResize.ts            # Drag-to-resize hook
 └── lib/
-    ├── alpaca.ts               # Alpaca REST API client
+    ├── alpaca.ts               # Alpaca REST + Yahoo Finance bar client
     ├── analytics.ts            # Beta, VaR, CVaR, correlation math
     ├── sectors.ts              # Symbol → sector mapping
     └── wsStore.ts              # WebSocket singleton store
