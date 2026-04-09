@@ -99,7 +99,9 @@ export function PriceChart({ symbol }: { symbol: string }) {
   // Feed historical bars
   useEffect(() => {
     if (!ready || !seriesRef.current || !barsData) return
-    const bars = barsData?.bars?.[symbol] ?? []
+    // single-symbol endpoint: { bars: [...] }  multi-symbol: { bars: { SYM: [...] } }
+    const raw = barsData?.bars
+    const bars: any[] = Array.isArray(raw) ? raw : (raw?.[symbol] ?? [])
     const candles = bars.map((b: any) => ({
       time:  Math.floor(new Date(b.t).getTime() / 1000) as any,
       open:  b.o,

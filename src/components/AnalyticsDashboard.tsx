@@ -129,7 +129,7 @@ function RiskTab() {
 
   const { data: barsData, isLoading } = useQuery({
     queryKey: ['risk-bars', [...symbols, 'SPY'].join(',')],
-    queryFn:  () => api.bars([...symbols, 'SPY'].join(','), '1Day', 40),
+    queryFn:  () => api.barsMulti([...symbols, 'SPY'], '1Day'),
     staleTime: 300_000,
     enabled:   symbols.length > 0,
   })
@@ -439,9 +439,11 @@ function ScenarioTab() {
   const stockPos = positions.filter((p: any) => p.asset_class !== 'us_option')
   const symsKey  = [...new Set(stockPos.map((p: any) => p.symbol as string)), 'SPY'].join(',')
 
+  const syms = useMemo(() => [...new Set(stockPos.map((p: any) => p.symbol as string)), 'SPY'], [symsKey])
+
   const { data: barsData } = useQuery({
     queryKey: ['scenario-bars', symsKey],
-    queryFn:  () => api.bars(symsKey, '1Day', 40),
+    queryFn:  () => api.barsMulti(syms, '1Day'),
     staleTime: 300_000,
     enabled:   stockPos.length > 0,
   })
