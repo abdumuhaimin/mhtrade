@@ -113,17 +113,26 @@ npm test
 
 ## Deployment
 
-The repo is connected to Vercel. Every push to `main` deploys automatically.
+### Deploy to your own Vercel account
 
-To deploy manually:
+**1. Fork this repo** on GitHub, then import it into your own Vercel account at [vercel.com/new](https://vercel.com/new).
 
-```bash
-vercel --prod
-```
+**2. Add environment variables** in Vercel → your project → **Settings → Environment Variables**:
 
-The `vercel.json` proxies `/alpaca-trade/*` and `/alpaca-data/*` to Alpaca's servers, so the same `VITE_ALPACA_BASE`/`VITE_ALPACA_DATA` env vars work in both dev and production.
+| Variable | Value |
+|---|---|
+| `VITE_ALPACA_KEY` | Your Alpaca paper trading API key |
+| `VITE_ALPACA_SECRET` | Your Alpaca paper trading secret |
+| `VITE_ALPACA_BASE` | `/alpaca-trade` |
+| `VITE_ALPACA_DATA` | `/alpaca-data` |
 
-> **Note:** Alpaca API keys are embedded in the client bundle (standard for single-user personal terminals). Do not use live trading credentials.
+Get your keys from [alpaca.markets](https://alpaca.markets) → Paper Trading → API Keys.
+
+**3. Deploy.** Vercel will build and deploy automatically. Every push to `main` redeploys.
+
+The `vercel.json` rewrites proxy `/alpaca-trade/*` and `/alpaca-data/*` to Alpaca's servers, and `/yf/*` to Yahoo Finance for historical chart data — no additional configuration needed.
+
+> **Note:** `VITE_` env vars are baked into the client bundle at build time (standard for single-user personal terminals). Only use paper trading credentials, never live ones.
 
 ---
 
