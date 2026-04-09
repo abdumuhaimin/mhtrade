@@ -29,11 +29,12 @@ export function PriceChart({ symbol }: { symbol: string }) {
   // Reset refs when symbol changes
   useEffect(() => { lastBarRef.current = null; latestPriceRef.current = null }, [symbol])
 
-  const { data: barsData } = useQuery({
+  const { data: barsData, error: barsError, isLoading: barsLoading } = useQuery({
     queryKey: ['bars', symbol, tf],
     queryFn: () => api.bars(symbol, TF_MAP[tf].timeframe, TF_MAP[tf].limit),
     refetchInterval: tf === '1D' ? 60000 : 15000,
     enabled: !!symbol,
+    retry: 1,
   })
 
   // Use ResizeObserver to detect when the wrapper has real dimensions, then init chart
@@ -177,7 +178,16 @@ export function PriceChart({ symbol }: { symbol: string }) {
           ))}
         </div>
       </div>
-      <div ref={wrapperRef} style={{ flex: 1, minHeight: 0 }} />
+      {barsError ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff3d57', fontSize: 11, padding: 12, textAlign: 'center' }}>
+          {String((barsError as any)?.message ?? barsError)}
+        </div>
+      ) : barsLoading ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6070', fontSize: 11 }}>
+          Loading…
+        </div>
+      ) : null}
+      <div ref={wrapperRef} style={{ flex: 1, minHeight: 0, display: barsError ? 'none' : undefined }} />
     </div>
   )
 }
