@@ -119,7 +119,11 @@ function GreeksTab() {
 }
 
 // ── RISK tab ──────────────────────────────────────────────────────────────────
+const BENCHMARKS = ['SPY', 'QQQ', 'IWM', 'DIA', 'GLD', 'TLT', 'XLE', 'XLK', 'BND'] as const
+
 function RiskTab() {
+  const [benchmark, setBenchmark] = useState('SPY')
+
   const { data: positions = [] } = useQuery<any[]>({
     queryKey: ['positions'], queryFn: api.positions, refetchInterval: 10000,
   })
@@ -128,8 +132,8 @@ function RiskTab() {
   const symbols  = useMemo(() => [...new Set(stockPos.map((p: any) => p.symbol as string))], [stockPos.map((p: any) => p.symbol).join(',')])
 
   const { data: barsData, isLoading } = useQuery({
-    queryKey: ['risk-bars', [...symbols, 'SPY'].join(',')],
-    queryFn:  () => api.barsMulti([...symbols, 'SPY'], '1Day'),
+    queryKey: ['risk-bars', [...symbols, benchmark].join(',')],
+    queryFn:  () => api.barsMulti([...symbols, benchmark], '1Day'),
     staleTime: 300_000,
     enabled:   symbols.length > 0,
   })
@@ -137,8 +141,8 @@ function RiskTab() {
   const analysis = useMemo(() => {
     if (!barsData?.bars) return null
     const bars = barsData.bars as Record<string, any[]>
-    const spyRet = dailyReturns((bars['SPY'] ?? []).map((b: any) => b.c))
-    if (spyRet.length < 5) return null
+    const bmkRet = dailyReturns((bars[benchmark] ?? []).map((b: any) => b.c))
+    if (bmkRet.length < 5) return null
 
     const symbolReturns: Record<string, number[]> = {}
     const weights: Record<string, number> = {}
@@ -148,8 +152,8 @@ function RiskTab() {
       const mv     = parseFloat(p.market_value)
       const weight = totalMV > 0 ? mv / totalMV : 0
       const ret    = dailyReturns((bars[p.symbol] ?? []).map((b: any) => b.c))
-      const n      = Math.min(ret.length, spyRet.length)
-      const r = ret.slice(-n), m = spyRet.slice(-n)
+      const n      = Math.min(ret.length, bmkRet.length)
+      const r = ret.slice(-n), m = bmkRet.slice(-n)
       const b = n >= 5 ? calcBeta(r, m) : 1
       const c = n >= 5 ? calcCorrelation(r, m) : 0
       symbolReturns[p.symbol] = r
@@ -166,7 +170,7 @@ function RiskTab() {
       cvar95: calcCVaR(portRet, 0.95),
       totalMV,
     }
-  }, [barsData, stockPos.map((p: any) => p.symbol + p.market_value).join(',')])
+  }, [barsData, benchmark, stockPos.map((p: any) => p.symbol + p.market_value).join(',')])
 
   if (isLoading) return <div style={{ padding: 24, textAlign: 'center', color: '#3a4050' }}>Computing risk metrics…</div>
   if (!analysis) return <div style={{ padding: 24, textAlign: 'center', color: '#3a4050' }}>Insufficient data</div>
@@ -175,7 +179,7 @@ function RiskTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', borderBottom: '1px solid #1e2229', flexShrink: 0 }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #1e2229', flexShrink: 0, alignItems: 'stretch' }}>
         {[
           { label: 'PORTFOLIO β',   value: portfolioBeta.toFixed(2), cls: Math.abs(portfolioBeta) > 1.3 ? 'warn' : 'white' },
           { label: 'VaR 95% (1D)',  value: fmtPct(var95),            cls: 'down' },
@@ -187,13 +191,27 @@ function RiskTab() {
             <div style={{ fontSize: 12, fontWeight: 700 }} className={cls}>{value}</div>
           </div>
         ))}
+        {/* Benchmark selector */}
+        <div style={{ padding: '5px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+          <div style={{ fontSize: 8, color: '#3a4050', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>BENCHMARK</div>
+          <select
+            value={benchmark}
+            onChange={e => setBenchmark(e.target.value)}
+            style={{ ...inputCss, fontSize: 10, padding: '2px 4px', cursor: 'pointer' }}
+          >
+            {BENCHMARKS.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+            <option value="__custom__" disabled style={{ color: '#3a4050' }}>──────</option>
+          </select>
+        </div>
       </div>
       <div className="panel-body">
         <table>
           <thead>
             <tr>
               <th style={{ textAlign: 'left' }}>Symbol</th>
-              <th>Weight</th><th>Beta</th><th>Corr(SPY)</th><th>β Contrib</th>
+              <th>Weight</th><th>Beta</th><th>Corr({benchmark})</th><th>β Contrib</th>
             </tr>
           </thead>
           <tbody>
