@@ -101,6 +101,7 @@ function TickerCell({ symbol, livePrice, restPrice, prevClose, hasAlert, onRemov
               padding: '0 1px', userSelect: 'none',
             }}
             title={`Remove ${symbol}`}
+            aria-label={`Remove ${symbol}`}
           >
             ✕
           </span>
