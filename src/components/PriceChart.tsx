@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts'
+import { createChart, ColorType, CandlestickSeries, HistogramSeries } from 'lightweight-charts'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/alpaca'
 import { useLivePrices } from '../hooks/useLivePrices'
@@ -16,12 +16,13 @@ const TF_MAP: Record<TF, { timeframe: string; limit: number }> = {
 }
 
 export function PriceChart({ symbol }: { symbol: string }) {
-  const wrapperRef    = useRef<HTMLDivElement>(null)
-  const chartRef      = useRef<ReturnType<typeof createChart> | null>(null)
-  const seriesRef     = useRef<any>(null)
-  const lastBarRef    = useRef<{ time: number; open: number; high: number; low: number; close: number } | null>(null)
-  const latestPriceRef = useRef<number | null>(null)
-  const [tf, setTf]   = useState<TF>('1D')
+  const wrapperRef      = useRef<HTMLDivElement>(null)
+  const chartRef        = useRef<ReturnType<typeof createChart> | null>(null)
+  const seriesRef       = useRef<any>(null)
+  const volSeriesRef    = useRef<any>(null)
+  const lastBarRef      = useRef<{ time: number; open: number; high: number; low: number; close: number } | null>(null)
+  const latestPriceRef  = useRef<number | null>(null)
+  const [tf, setTf]     = useState<TF>('1D')
   const [ready, setReady] = useState(false)
 
   const { trades, quotes } = useLivePrices([symbol])
@@ -37,9 +38,8 @@ export function PriceChart({ symbol }: { symbol: string }) {
     retry: 1,
   })
 
-  // Use ResizeObserver to detect when the wrapper has real dimensions, then init chart
   const initChart = useCallback((el: HTMLDivElement) => {
-    if (chartRef.current) return  // already initialized
+    if (chartRef.current) return
     const chart = createChart(el, {
       autoSize: true,
       layout: {
@@ -55,16 +55,28 @@ export function PriceChart({ symbol }: { symbol: string }) {
       rightPriceScale: { borderColor: '#1e2229' },
       timeScale: { borderColor: '#1e2229', timeVisible: true, secondsVisible: false },
     })
+
     const series = chart.addSeries(CandlestickSeries, {
-      upColor:          '#00e676',
-      downColor:        '#ff3d57',
-      borderUpColor:    '#00e676',
-      borderDownColor:  '#ff3d57',
-      wickUpColor:      '#00e676',
-      wickDownColor:    '#ff3d57',
+      upColor:         '#00e676',
+      downColor:       '#ff3d57',
+      borderUpColor:   '#00e676',
+      borderDownColor: '#ff3d57',
+      wickUpColor:     '#00e676',
+      wickDownColor:   '#ff3d57',
     })
-    chartRef.current  = chart
-    seriesRef.current = series
+
+    const volSeries = chart.addSeries(HistogramSeries, {
+      color: '#2979ff',
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'vol',
+    })
+    chart.priceScale('vol').applyOptions({
+      scaleMargins: { top: 0.82, bottom: 0 },
+    })
+
+    chartRef.current    = chart
+    seriesRef.current   = series
+    volSeriesRef.current = volSeries
     setReady(true)
   }, [])
 
@@ -82,7 +94,6 @@ export function PriceChart({ symbol }: { symbol: string }) {
     })
     ro.observe(el)
 
-    // Also try immediately in case dimensions are already set
     if (el.clientWidth > 0 && el.clientHeight > 0) {
       initChart(el)
     }
@@ -91,17 +102,17 @@ export function PriceChart({ symbol }: { symbol: string }) {
       ro.disconnect()
       if (chartRef.current) {
         chartRef.current.remove()
-        chartRef.current  = null
-        seriesRef.current = null
+        chartRef.current    = null
+        seriesRef.current   = null
+        volSeriesRef.current = null
       }
     }
   }, [initChart])
 
-  // Feed historical bars
+  // Feed historical bars + volume
   useEffect(() => {
     if (!ready || !seriesRef.current || !barsData) return
-    // single-symbol endpoint: { bars: [...] }  multi-symbol: { bars: { SYM: [...] } }
-    const raw = barsData?.bars
+    const raw  = barsData?.bars
     const bars: any[] = Array.isArray(raw) ? raw : (raw?.[symbol] ?? [])
     const candles = bars.map((b: any) => ({
       time:  Math.floor(new Date(b.t).getTime() / 1000) as any,
@@ -110,13 +121,19 @@ export function PriceChart({ symbol }: { symbol: string }) {
       low:   b.l,
       close: b.c,
     }))
+    const volumes = bars.map((b: any) => ({
+      time:  Math.floor(new Date(b.t).getTime() / 1000) as any,
+      value: b.v ?? 0,
+      color: b.c >= b.o ? '#00e67640' : '#ff3d5740',
+    }))
+
     if (candles.length) {
       seriesRef.current.setData(candles)
+      volSeriesRef.current?.setData(volumes)
       chartRef.current?.timeScale().fitContent()
       const last = candles[candles.length - 1]
-      // Re-apply latest live price so a barsData refresh doesn't revert the candle
       if (latestPriceRef.current) {
-        const p = latestPriceRef.current
+        const p       = latestPriceRef.current
         const updated = { ...last, high: Math.max(last.high, p), low: Math.min(last.low, p), close: p }
         seriesRef.current.update({ ...updated, time: updated.time as any })
         lastBarRef.current = updated
@@ -137,9 +154,8 @@ export function PriceChart({ symbol }: { symbol: string }) {
     const livePrice = trade?.p || mid
     if (!livePrice || livePrice <= 0) return
 
-    // Sanity check: reject prices >30% away from bar close (bad prints / zero quotes)
     const last = lastBarRef.current
-    const ref = last.close || last.open
+    const ref  = last.close || last.open
     if (ref > 0 && (livePrice < ref * 0.7 || livePrice > ref * 1.3)) return
 
     latestPriceRef.current = livePrice
@@ -148,7 +164,7 @@ export function PriceChart({ symbol }: { symbol: string }) {
       time:  last.time,
       open:  last.open,
       high:  Math.max(last.high, livePrice),
-      low:   last.low,   // never update low from live ticks — Math.min with bad data corrupts permanently
+      low:   last.low,
       close: livePrice,
     }
     lastBarRef.current = bar

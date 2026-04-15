@@ -3,14 +3,14 @@ import { api } from '../lib/alpaca'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useState } from 'react'
 
-const PERIODS = ['1W', '1M', '3M', '1A'] as const
+const PERIODS = ['1W', '1M', '3M', '1Y'] as const
 type Period = typeof PERIODS[number]
 
 const PERIOD_MAP: Record<Period, { period: string; timeframe: string }> = {
   '1W': { period: '1W', timeframe: '1H' },
   '1M': { period: '1M', timeframe: '1D' },
   '3M': { period: '3M', timeframe: '1D' },
-  '1A': { period: '1A', timeframe: '1D' },
+  '1Y': { period: '1A', timeframe: '1D' },
 }
 
 function CustomTooltip({ active, payload }: any) {

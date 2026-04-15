@@ -38,10 +38,11 @@ async function fetchYFBars(symbol: string, timeframe: string) {
   return timestamps
     .map((t, i) => ({
       t: new Date(t * 1000).toISOString(),
-      o: q.open?.[i]  as number,
-      h: q.high?.[i]  as number,
-      l: q.low?.[i]   as number,
-      c: q.close?.[i] as number,
+      o: q.open?.[i]   as number,
+      h: q.high?.[i]   as number,
+      l: q.low?.[i]    as number,
+      c: q.close?.[i]  as number,
+      v: (q.volume?.[i] ?? 0) as number,
     }))
     .filter(b => b.o != null && b.c != null)
 }
@@ -71,6 +72,40 @@ export const api = {
 
   latestQuote: (symbols: string[]) =>
     get(`${DATA}/v2/stocks/quotes/latest?symbols=${symbols.join(',')}&feed=iex`),
+
+  prevClose: async (symbols: string[]): Promise<Record<string, number | null>> => {
+    const results = await Promise.all(symbols.map(async (sym) => {
+      try {
+        const r = await fetch(`/yf/v8/finance/chart/${sym}?interval=1d&range=5d`)
+        if (!r.ok) return [sym, null]
+        const data = await r.json()
+        const meta = data?.chart?.result?.[0]?.meta
+        const pc = meta?.chartPreviousClose ?? meta?.previousClose ?? null
+        return [sym, pc as number | null]
+      } catch { return [sym, null] }
+    }))
+    return Object.fromEntries(results)
+  },
+
+  cancelOrder: (id: string) =>
+    fetch(`${BASE}/v2/orders/${id}`, { method: 'DELETE', headers }).then(r => {
+      if (r.status === 204) return
+      return r.json().then((b: any) => { throw new Error(b.message ?? `${r.status}`) })
+    }),
+
+  placeOrder: (o: {
+    symbol: string; qty: string; side: 'buy' | 'sell';
+    type: 'market' | 'limit'; time_in_force: string; limit_price?: string;
+  }) =>
+    fetch(`${BASE}/v2/orders`, {
+      method: 'POST', headers, body: JSON.stringify(o),
+    }).then(async r => {
+      if (!r.ok) {
+        const b = await r.json().catch(() => ({}))
+        throw new Error((b as any).message ?? `${r.status}`)
+      }
+      return r.json()
+    }),
 }
 
 export const WS_KEY    = KEY

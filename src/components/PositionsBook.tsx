@@ -55,6 +55,13 @@ function PositionRow({ pos, livePrice }: { pos: Position; livePrice?: number }) 
   return (
     <tr>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{
+          fontSize: 8, fontWeight: 700, padding: '1px 3px', borderRadius: 2, marginRight: 4,
+          background: pos.side === 'long' ? '#00e67618' : '#ff3d5718',
+          color: pos.side === 'long' ? '#00e676' : '#ff3d57',
+        }}>
+          {pos.side === 'long' ? 'L' : 'S'}
+        </span>
         <span style={{ fontWeight: 700, color: '#e8ecf4' }} title={pos.symbol}>{displaySym}</span>
       </td>
       <td className="white" style={{ padding: '3px 4px' }} title={pos.qty}>{
